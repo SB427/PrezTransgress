@@ -1,1 +1,1 @@
-[Version Web](https://github.io/sb427/PrezTransgress/Transgression.html)
+[Version Web](https://sb427.github.io/PrezTransgress/Transgression.html)
