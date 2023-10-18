@@ -1,0 +1,456 @@
+---
+title: "Etudier le concept de transgression dans la littérature en marketing"
+subtitle: "NLP workshop"
+author: "Sophie Balech"
+institute: "IAE Amiens - UPJV <br/> sophie.balech@u-picardie.fr"
+date: 2023-10-26
+date-format: "DD/MM/YYYY"
+lang: fr
+format: 
+  revealjs:
+    slide-number: c/t
+    title-slide-attributes: 
+      data-background-color: "#FFD1DC"
+    theme: ["styles.scss"]
+    width: 1280
+    height: 720
+execute: 
+  echo: true
+  eval: false
+  warning: false
+  error: false
+editor: visual
+---
+
+```{r setup}
+#| include: false
+#| eval: true
+
+library(tidyverse)
+library(quanteda)
+
+data<-read_rds("D:/Transgress/data_transgress.rds")
+
+journal<-data%>%count(journal)
+
+author<-str_split(data$author,"; ")%>%unlist()%>%as_tibble()%>%rename(author=1)%>%mutate(author=str_remove_all(author, "\\."))%>%mutate(author=str_extract(author, ".*\\,[ ][A-z]*"))%>%group_by(author)%>%summarise(n=n())%>%arrange(-n)
+
+```
+
+## Contexte de la recherche
+
+-   Thèse sur la transgression en marketing appliquée aux normes de genre sur le cas du maquillage pour hommes d'Alicia Lefrançois
+
+-   Revue de littérature semi-systématique
+
+-   Collecte des données "à la main" durant l'été 2021 (phase 1) et l'année 2022 (phase 2)
+
+-   **Objectif : Conceptualiser et définir la transgression en marketing**
+
+-   Utilisation de la méthode de classification descendante hiérarchique (CHD) de Reinert (comme dans Iramuteq) grâce que package [rainette](https://juba.github.io/rainette/index.html)
+
+## Présentation des données
+
+::: columns
+::: column
+-   `r nrow(data)` articles issus de `r nrow(journal)` revues
+
+-   `r scales::number(nrow(author), big.mark = " ")` auteurs, en moyenne `r str_split(data$author,";")%>%lengths()%>%mean()%>%round(digits = 2)` auteurs par articles
+
+-   Le corpus s'étend de `r min(data$year)` à `r max(data$year)`
+
+-   Longueur moyenne d'un article : `r scales::number(mean(data$ntoken), big.mark = " ", accuracy = 1)` (min : `r scales::number(min(data$ntoken), big.mark = " ", accuracy = 1)` ; max : `r scales::number(max(data$ntoken), big.mark = " ", accuracy = 1)`)
+
+::: {.fragment .fade-in-then-out fragment-index="2"}
+```{r}
+#| code-line-numbers: "1,5,6,7,11"
+
+author<-str_split(data$author,"; ")%>%
+  unlist()%>%
+  as_tibble()%>%
+  rename(author=1)%>%
+  mutate(author=str_remove_all(author, "\\."))%>%
+  mutate(author=str_extract(author, ".*\\,[ ][A-z]*"))%>%
+  count(author)%>%
+  arrange(-n)
+
+str_split(data$author,";")%>%
+  lengths()%>%
+  mean()%>%
+  round(digits = 2)
+
+```
+:::
+:::
+
+::: column
+::: r-stack
+::: {.fragment .fade-out fragment-index="1"}
+```{r}
+#| echo: false
+#| eval: true
+#| fig.height: 8
+#| fig.width: 8
+ggplot(journal)+
+  geom_col(aes(reorder(journal, n),n, fill=cut(n,breaks = c(0,5,25,50,100,200))),show.legend = F)+
+  coord_flip()+
+  labs(x=NULL, y=NULL, title = "Répartition des articles en fonction\ndes revues",subtitle =paste("Moyenne :",round(mean(journal$n),0),"articles par revue ; Médiane :",median(journal$n), ";\nMin :", min(journal$n), "; Max :", max(journal$n)) ,caption = paste("Data : Corpus d'articles scientifiques des principales revues en marketing contenant le terme \"transgress\"\n n=", nrow(data)))+
+  scale_fill_brewer(palette = "Oranges")+
+  theme_minimal()
+
+```
+:::
+
+::: {.fragment .fade-in-then-out fragment-index="2"}
+```{r}
+#| echo: false
+#| eval: true
+#| fig.height: 8
+#| fig.width: 8
+
+author%>%filter(n>3)%>%
+  ggplot(aes(reorder(author,n), n))+
+  geom_col(aes(fill=n), show.legend = F)+
+  coord_flip()+
+  labs(x=NULL, y="Nombre d'articles par auteur", title="Auteurs les plus présents dans le corpus", subtitle = paste("Nombre total d'auteurs dans le corpus :",nrow(author),"\nNombre moyen d'articles par auteur :", round(nrow(author)/nrow(data),2),"\nNombre d'auteurs ayant publié : 3 articles =",nrow(filter(author,n==3)), "; 2 articles =", nrow(filter(author, n==2)), "; 1 article = ", nrow(filter(author, n==1))) ,caption = paste("Data : Corpus d'articles scientifiques des principales revues en marketing contenant le terme \"transgress\"\n n=", nrow(data)))+
+  scale_y_continuous(breaks = c(4,5,6,9,10,15))+
+  theme_minimal()
+```
+:::
+
+::: {.fragment .fade-in-then-out fragment-index="3"}
+```{r}
+#| echo: false
+#| eval: true
+#| fig.height: 8
+#| fig.width: 8
+
+decade<-data%>%mutate(decade=ifelse(year<2000, "< 2000",ifelse(year>=2000&year<2010, "2000's", ifelse(year>=2010&year<2020, "2010's", "2020's"))))%>%group_by(decade)%>%summarise(n=n())
+year<-data%>%group_by(year)%>%summarise(n=n())
+
+ggplot(decade)+
+  geom_col(aes(decade,n, fill=decade),show.legend = F)+
+  geom_label(aes(decade, n, label=n))+
+  coord_flip()+
+  labs(x=NULL, y=NULL, title="Répartition des articles en fonction des décennies", subtitle = paste("Parution entre",min(year$year),"et", max(year$year)) ,caption = paste("Data : Corpus d'articles scientifiques des principales revues en marketing contenant le terme \"transgress\"\n n=", nrow(data)))+
+  scale_fill_brewer(palette = "Spectral")+
+  theme_minimal()
+```
+:::
+
+::: {.fragment .fade-in-then-out fragment-index="4"}
+```{r}
+#| echo: false
+#| eval: true
+#| fig.height: 8
+#| fig.width: 8
+
+
+ggplot(data)+
+  geom_boxplot(aes(ntoken))+
+  coord_flip()+
+  labs(x=NULL, y=NULL, title="Nombre de mots des articles", subtitle = paste("Moyenne",round(mean(data$ntoken),0),"; min :", min(data$ntoken),"; max :", max(data$ntoken)) ,caption = paste("Data : Corpus d'articles scientifiques des principales revues en marketing contenant le terme \"transgress\"\n n=", nrow(data)))+
+  theme_minimal()
+```
+:::
+:::
+:::
+:::
+
+## Construction de la base
+
+### Les données brutes
+
+![](doc_transgress.png){.absolute left="0" height="500"}
+
+![](zotero_transgress.png){.absolute right="0" bottom="30" width="1000" height="450"}
+
+## Construction de la base
+
+### Préparation des métadonnées
+
+```{r}
+library(tidyverse)
+library(readxl)
+#on lit le fichier excel
+data<-read_xlsx("782 ARTICLES TRANSGRESSION.xlsx")
+
+#on renomme les variables et on sélectionne les pertinentes
+df<-data%>%
+  rename(doc_id=3,
+         journal=`Publication Title`,
+         year=`Publication Year`, 
+         abstract=`Abstract Note`, 
+         title=Title, 
+         author=Author)%>%
+  select(doc_id, year, title, abstract, journal, author)
+```
+
+## Construction de la base
+
+### Lecture des articles
+
+```{r}
+#| code-line-numbers: "|2-3|5-7|8-9|11-12|14-15|17-20|22-24|"
+library(tm)       library(quanteda)
+#on récupère les noms des fichiers à lire depuis les dossiers
+files <- list.files( pattern = "pdf$", recursive = T, include.dirs = T)
+
+#on lit les fichiers, sans la mise en forme
+corp<-Corpus(URISource(files),
+               readerControl = list(reader = readPDF, text=("-layout")))
+#on enlève les sauts de page et autres mises en forme à partir d'espace
+corp <- tm_map(corp, stripWhitespace)
+
+#on change de format, on passe en corpus quanteda
+corpus<-corpus(corp)
+
+#on s'assure d'avoir que les textes présents dans les métadonnées
+corpus<-corpus_subset(corpus,id%in%df$doc_id)
+
+#on enlève les auteurs des métadonnées du corpus puis on met les métadonnées du fichier préparé en amont et on renomme le tout
+metadoc<-docvars(corpus)%>%select(-author)
+metadoc<-left_join(metadoc,df,c("id"="doc_id"))
+docvars(corpus)<-docvars(corpus)%>%mutate(journal=metadoc$journal, year=metadoc$year, author=metadoc$author)
+
+#on transforme tout ça en tableau de données et on ne garde que les métadonnées pertinentes
+df2<-convert(corpus, to="data.frame")
+df2<-df2%>%select(doc_id, text, author, id, journal, year)
+
+```
+
+## Préparation des données
+
+### Annotation POS
+
+```{r}
+#on initialise l'annotateur
+cnlp_init_udpipe()
+
+#on lance l'annotation (très très long pour les 782 documents)
+annot<-cnlp_annotate(df2,verbose=100)
+
+#on récupère l'annotation des mots
+token<-annot$token
+
+#on sauvegarde le résultat de l'annotation
+write_rds(token,"annot_transgress.rds")
+
+#on crée une variable du nombre de caractère de chaque lemme
+token<-token%>%mutate(nbcar=nchar(lemma))
+
+#on reconstitue le texte en ne gardant que les adjectifs, les verbes et les noms communs
+data2<-token%>%
+  filter(upos %in% c("ADJ","VERB","NOUN")&nbcar>1)%>%
+  group_by(doc_id)%>%
+  summarise(text=paste(lemma , collapse = " "))
+
+#on ajoute ces textes reconstitués à notre tableau fait précédemment
+data<-data%>%rename(text_init=text)%>%inner_join(data2)
+
+#on sauvegarde le tout
+write_rds(data, "data_transgress.rds")
+```
+
+![](dependenciestransgress.png){.fragment .absolute right="0" top="0"}
+
+## Préparation des données
+
+### Collocations
+
+```{r}
+# On crée le corpus
+corpus<-corpus(data, text_field = "text")
+
+# On crée l'objet token
+tok<-tokens(corpus)
+
+# On calcule les collocations
+colloc<-textstat_collocations(tok,size=c(2,3), min_count = 10)
+
+# On sauvegarde le résultat
+write_rds(colloc, "colloc_min10.rds")
+
+# On compose les nouveaux tokens
+tok <- tokens_compound(tok, pattern = colloc[colloc$z > 7,])
+
+```
+
+![](coloc_transgress.png){.fragment .absolute right="0" top="100"}
+
+## Préparation des données
+
+### KWIC
+
+```{r}
+# On cherche les occurrences contenant "transgress"
+kwic_transgress<-kwic(tok, "*transgress*", window = 50)
+
+# On transforme le résultat en data.frame
+kwic_transgress<-as.data.frame(kwic_transgress)
+
+# On reconstitue les textes
+kwic_transgress<-kwic_transgress%>%
+  mutate(text_transgress=paste(pre, keyword, post))%>%
+  select(docname, text_transgress)
+
+# On accole les métadonnées
+data_transgress<-data%>%
+  select(doc_id,journal,year,decade)%>%
+  right_join(kwic_transgress, by=c("doc_id"="docname"))%>%
+  rename(docname=doc_id, text=text_transgress)%>%
+  mutate(doc_id=paste0("text",1:nrow(.)))
+
+# On sauvegarde le tout
+write_rds(data_transgress, "data_kwic_transgress.rds")
+
+```
+
+![](kwic_transgress.png){.fragment .fade-in-then-out .absolute right="0" top="100"}
+
+## Classification Reinert
+
+### Les données
+
+```{r data_reinert}
+#| code-line-numbers: "|4-5|7-9|11-13"
+corpus<-corpus(data_transgress)
+tok<-tokens(corpus)
+
+#Etape 1 : créer des sous-segments
+corpus_rainette <- split_segments(tok, segment_size = 101)
+
+#Etape 2 : créer l'objet token
+tok_rainette <- tokens(corpus_rainette, remove_punct = TRUE, remove_numbers = TRUE)%>%
+  tokens_remove(stopwords("en"),min_nchar=2, max_nchar=49)
+
+#Etape 3 : créer le dfm et filtrer le vocabulaire
+dtm <- dfm(tok_rainette)
+dtm <- dfm_trim(dtm, min_docfreq = 50)
+
+```
+
+## Classification Reinert
+
+### Classification simple
+
+```{r reinert_simple}
+#| code-line-numbers: "1|3-10|12"
+res <- rainette(dtm, k = 9, min_segment_size = 10, min_split_members = 10)
+ 
+rainette_plot(
+  res, dtm, k = 9,
+  n_terms = 20,
+  free_scales = FALSE,
+  measure = "chi2",
+  show_negative = TRUE,
+  text_size = 6
+)
+
+corpus_rainette$group<-cutree_rainette(res, k = 9)
+
+```
+
+## Classification Reinert
+
+### Classification simple
+
+```{r}
+rainette_explor(res, dtm, corpus_rainette)
+```
+
+![](rainette_explore.png){height="500"}
+
+## Classification Reinert
+
+### Classification double
+
+```{r reinert_double}
+#| code-line-numbers: "3-6|18-20|18,22,23|13"
+k=9
+
+res1 <- rainette(dtm, k = k, min_segment_size = 10)
+res2 <- rainette(dtm, k = k, min_segment_size = 50)
+
+res <- rainette2(res1, res2, max_k = k)
+
+rainette2_plot(
+  res, dtm, k = k,
+  criterion = "chi2",
+  n_terms = 20,
+  free_scales = FALSE,
+  measure = "chi2",
+  show_negative = FALSE,
+  text_size = 6
+)
+
+## Groups
+corpus_rainette$group<-cutree_rainette2(res, k = k, criterion = "chi2")
+clusters_by_doc_table(corpus_rainette, clust_var = "group", prop = T)
+
+dfm<-dfm(tok_rainette)
+docvars(dfm, "group")<-cutree_rainette2(res, k = k, criterion = "chi2")
+
+```
+
+![](rainette_double.png){.fragment .absolute right="0" top="100"}
+
+## Représentations graphiques
+
+```{r wc_reinert}
+#| code-line-numbers: "1,3,24|4-6|7-15|16-23"
+dfm_gp<-dfm%>%dfm_group(groups=group)
+
+for (i in 1:k){
+  #nuage de mots
+  textplot_wordcloud(dfm_subset(dfm_gp, group==i), max_size = 3, max_words = 200, color = rev(RColorBrewer::brewer.pal(10, "RdBu")))
+    title(main= paste("Group", i), sub=paste(" n doc =", ndoc(dfm_subset(dfm, group==i))))
+    #fréquences des termes
+   freq<-textstat_frequency(dfm_subset(dfm_gp, group==i), 30)
+    myplot<-ggplot(freq,aes(x=reorder(feature,frequency),y=frequency))+
+  geom_col(aes(fill=frequency), show.legend = F)+
+  coord_flip()+
+  theme_minimal()+
+  scale_fill_distiller(palette="Spectral", direction = -1)+
+  labs(title =paste("Mots les plus fréquents dans le groupe", i),x=NULL,y="Occurrences")
+  plot(myplot)
+  #réseaux sémantique
+    my_graph<-textplot_network(fcm(dfm_trim(dfm_subset(dfm_gp, group==i), min_termfreq = 40, termfreq_type = "rank")),
+                               vertex_labelsize = 0.03*Matrix::rowSums(fcm(dfm_trim(dfm_subset(dfm_gp, group==i),min_termfreq = 40, termfreq_type = "rank"))) / min(Matrix::rowSums(fcm(dfm_trim(dfm_subset(dfm_gp, group==i),min_termfreq = 40, termfreq_type = "rank")))),
+                               edge_alpha = 0.2, 
+                               edge_color = "red", 
+                               vertex_color = "darkblue")+
+    labs(title=paste("Group",i))
+  plot(my_graph)  
+}
+
+```
+
+------------------------------------------------------------------------
+
+![](rainette_wc.png){.absolute left="0" top="0"} ![](rainette_freq.png){.absolute right="0" top="100"}
+
+![](rainette_reseau.png){.absolute left="50" bottom="0" height="300"}
+
+## Pour finir
+
+-   CHD sur des sous-groupes
+
+-   Vectorisation
+
+-   ACP
+
+-   ...
+
+Le papier est en cours de finalisation 😄
+
+
+<br>
+<br>
+<br>
+<br>
+
+
+:::{style="text-align: center"}
+### Merci pour votre attention
+:::
