@@ -47,7 +47,7 @@ author<-str_split(data$author,"; ")%>%unlist()%>%as_tibble()%>%rename(author=1)%
 
 -   **Objectif : Conceptualiser et définir la transgression en marketing**
 
--   Utilisation de la méthode de classification descendante hiérarchique (CHD) de Reinert (comme dans Iramuteq) grâce que package [rainette](https://juba.github.io/rainette/index.html)
+-   Utilisation de la méthode de classification descendante hiérarchique (CHD) de Reinert (comme dans Iramuteq) grâce au package [rainette](https://juba.github.io/rainette/index.html)
 
 ## Présentation des données
 
@@ -55,13 +55,13 @@ author<-str_split(data$author,"; ")%>%unlist()%>%as_tibble()%>%rename(author=1)%
 ::: column
 -   `r nrow(data)` articles issus de `r nrow(journal)` revues
 
--   `r scales::number(nrow(author), big.mark = " ")` auteurs, en moyenne `r str_split(data$author,";")%>%lengths()%>%mean()%>%round(digits = 2)` auteurs par articles
+-   `r scales::number(nrow(author), big.mark = " ")` auteurs, en moyenne `r str_split(data$author,";")%>%lengths()%>%mean()%>%round(digits = 2)` auteurs par article
 
 -   Le corpus s'étend de `r min(data$year)` à `r max(data$year)`
 
--   Longueur moyenne d'un article : `r scales::number(mean(data$ntoken), big.mark = " ", accuracy = 1)` (min : `r scales::number(min(data$ntoken), big.mark = " ", accuracy = 1)` ; max : `r scales::number(max(data$ntoken), big.mark = " ", accuracy = 1)`)
+-   Longueur moyenne d'un article : `r scales::number(mean(data$ntoken), big.mark = " ", accuracy = 1)` tokens (min : `r scales::number(min(data$ntoken), big.mark = " ", accuracy = 1)` ; max : `r scales::number(max(data$ntoken), big.mark = " ", accuracy = 1)`)
 
-::: {.fragment .fade-in-then-out fragment-index="2"}
+::: {.fragment .fade-in-then-out fragment-index="1"}
 ```{r}
 #| code-line-numbers: "1,5,6,7,11"
 
@@ -101,7 +101,7 @@ ggplot(journal)+
 ```
 :::
 
-::: {.fragment .fade-in-then-out fragment-index="2"}
+::: {.fragment .fade-in-then-out fragment-index="1"}
 ```{r}
 #| echo: false
 #| eval: true
@@ -118,7 +118,7 @@ author%>%filter(n>3)%>%
 ```
 :::
 
-::: {.fragment .fade-in-then-out fragment-index="3"}
+::: {.fragment .fade-in-then-out fragment-index="2"}
 ```{r}
 #| echo: false
 #| eval: true
@@ -138,7 +138,7 @@ ggplot(decade)+
 ```
 :::
 
-::: {.fragment .fade-in-then-out fragment-index="4"}
+::: {.fragment .fade-in-then-out fragment-index="3"}
 ```{r}
 #| echo: false
 #| eval: true
